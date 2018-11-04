@@ -6,7 +6,7 @@ var { app }  = require('../server');
 var { Todo } = require('../Models/Todo');
 
 const dummyTodos = [
-    { _id: new ObjectId, text:'Dummy 1' },
+    { _id: new ObjectId, text:'Dummy 1', completed:true, completedAt:333 },
     { _id: new ObjectId, text:'Dummy 2' },
     { _id: new ObjectId, text:'Dummy 3' }
 ];
@@ -155,3 +155,50 @@ describe('DELETE /todos/todo/:id', () => {
             .end(done);
     });
 });
+
+describe('PATCH /todos/todo/:id', () => {
+    it('should update text and complete in todo', (done) => {
+        var updates = { text:'Test update', completed:true };
+        request(app)
+            .patch(`/todos/todo/${dummyTodos[1]._id.toHexString()}`)
+            .send(updates)
+            .expect(200)
+            .expect(res => {
+                expect(res.body.todo.completed).toBe(true);
+            })
+            .end( (err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                Todo.findById(dummyTodos[1]._id.toHexString())
+                    .then(todo => {
+                        expect(todo.completed).toBe(true);
+                        done();
+                    })
+                    .catch(e => done(e));
+            });
+    });
+
+    it('should make todo uncompleted and clear completed fields', (done) => {
+        var updates = { complete: false };
+        request(app)
+            .patch(`/todos/todo/${dummyTodos[0]._id.toHexString()}`)
+            .send(updates)
+            .expect(200)
+            .expect(res => {
+                expect(res.body.todo.completed).toBe(false);
+            })
+            .end((err, res) => {
+                if (err) {
+                    return done(err);
+                }
+                Todo.findById(dummyTodos[0]._id.toHexString())
+                    .then(todo => {
+                        expect(todo.completed).toBe(false);
+                        expect(todo.completedAt).toBeNull();
+                        done();
+                    })
+                    .catch(e => done(e));
+            });
+    });
+})
