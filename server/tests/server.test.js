@@ -1,19 +1,22 @@
 const request = require('supertest');
 const expect    = require('expect');
+const { ObjectId } = require('mongodb');
 
 var { app }  = require('../server');
 var { Todo } = require('../Models/Todo');
 
 const dummyTodos = [
-    { text:'Dummy 1' },
-    { text:'Dummy 2' },
-    { text:'Dummy 3' }
+    { _id: new ObjectId, text:'Dummy 1' },
+    { _id: new ObjectId, text:'Dummy 2' },
+    { _id: new ObjectId, text:'Dummy 3' }
 ];
 
 beforeEach( (done) => {
-    Todo.deleteMany({}).then( () => {
+    Todo.deleteMany({})
+    .then( () => {
         return Todo.insertMany(dummyTodos);
-    }).then( () => done());
+    })
+    .then( () => done());
 });
 
 
@@ -71,5 +74,38 @@ describe('GET /todos', () => {
                 expect(res.body.todos.length).toBe(3);
             })
             .end(done);
+    });
+});
+
+describe('GET /todos/todo/:id' , () => {
+    it('should get the todo from db', (done) => {
+        request(app)
+            .get(`/todos/todo/${dummyTodos[0]._id.toHexString()}`)
+            .expect(200)
+            .expect( res => {
+                expect(res.body.todo.text).toBe('Dummy 1');
+            })
+            .end(done);
+    });
+
+    it('should return invalid message and 404 when invalid todo id', (done) => {
+        request(app)
+            .get(`/todos/todo/${dummyTodos[0]._id.toHexString()} invalid`)
+            .expect(404)
+            .expect(res => {
+                expect(res.body.Error).toBe('Invalid Todo Id');
+            })
+            .end(done);
+    });
+
+    it('should return 404 and  message if todo not found', (done) => {
+        var inextentId = new ObjectId().toHexString();
+        request(app)
+        .get(`/todos/todo/${inextentId}`)
+        .expect(404)
+        .expect(res => {
+            expect(res.body.Error).toBe('Todo Id not found');
+        })
+        .end(done);
     });
 });
