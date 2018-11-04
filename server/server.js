@@ -7,6 +7,7 @@ var { User }     = require('./Models/User');
 var { Todo }     = require('./Models/Todo');
 
 var app = express();
+const port = process.env.Process || 3000;
 
 app.use(bodyParser.json());
 
@@ -42,6 +43,6 @@ app.get('/todos/todo/:id', (req, res) => {
     .catch(e => res.status(400).send({ Error: 'Invalid Todo Id' }));
 });
 
-app.listen(3000, () => { console.log('Starting on 3000'); });
+app.listen(port, () => { console.log(`Starting on ${port}`); });
 
 module.exports = { app };
